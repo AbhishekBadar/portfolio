@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { AnimatePresence } from 'framer-motion'
+import { Analytics } from '@vercel/analytics/react'
 import Header from './components/Header'
 import Hero from './components/Hero'
 import About from './components/About'
@@ -51,6 +52,9 @@ function App() {
           </main>
         </div>
       )}
+      
+      {/* Vercel Analytics */}
+      <Analytics />
     </>
   )
 }
