@@ -1,253 +1,285 @@
-import { Github, Linkedin, Mail, Phone, ArrowDown, Code, Zap, PenTool } from 'lucide-react'
-import { motion } from 'framer-motion'
-import { fadeInUp, fadeIn, scaleIn, staggerContainer } from '../hooks/useScrollAnimation'
-import { useParallax, useMouseParallax } from '../hooks/useParallax'
+import { ArrowUpRight, Github, Mail } from 'lucide-react'
+import { useState, useEffect, useRef } from 'react'
+import { useSmoothScroll } from '../hooks/useSmoothScroll'
+
+interface BlogPost {
+  title: string
+  link: string
+  pubDate: string
+  description: string
+}
 
 const Hero = () => {
-  const { y: parallaxY1 } = useParallax(0.3)
-  const { y: parallaxY2 } = useParallax(0.5)
-  const { y: parallaxY3 } = useParallax(0.7)
-  const { x: mouseX, y: mouseY } = useMouseParallax(0.02)
+  const [timeOfDay, setTimeOfDay] = useState('')
+  const [currentTime, setCurrentTime] = useState('')
+  const [latestPost, setLatestPost] = useState<BlogPost | null>(null)
+  const [isLoadingPost, setIsLoadingPost] = useState(true)
+  const { scrollToElement } = useSmoothScroll()
+  
+  // Magnetic button refs
+  const primaryBtnRef = useRef<HTMLAnchorElement>(null)
+  const secondaryBtnRef = useRef<HTMLAnchorElement>(null)
+  
+  // Dynamic greeting based on time
+  useEffect(() => {
+    const updateTime = () => {
+      const now = new Date()
+      const hour = now.getHours()
+      const timeString = now.toLocaleTimeString('en-US', { 
+        hour: '2-digit', 
+        minute: '2-digit',
+        timeZone: 'Asia/Kolkata'
+      })
+      
+      setCurrentTime(timeString)
+      
+      if (hour < 12) setTimeOfDay('Good morning')
+      else if (hour < 17) setTimeOfDay('Good afternoon')
+      else setTimeOfDay('Good evening')
+    }
+    
+    updateTime()
+    const interval = setInterval(updateTime, 1000)
+    
+    return () => clearInterval(interval)
+  }, [])
+
+  // Fetch latest blog post from Medium
+  useEffect(() => {
+    const fetchLatestPost = async () => {
+      try {
+        // Using RSS2JSON service to convert Medium RSS to JSON
+        const response = await fetch(
+          'https://api.rss2json.com/v1/api.json?rss_url=https://medium.com/feed/@abhishekbadar'
+        )
+        const data = await response.json()
+        
+        if (data.status === 'ok' && data.items && data.items.length > 0) {
+          const post = data.items[0]
+          setLatestPost({
+            title: post.title,
+            link: post.link,
+            pubDate: post.pubDate,
+            description: post.description
+          })
+        }
+      } catch (error) {
+        console.log('Could not fetch latest blog post:', error)
+      } finally {
+        setIsLoadingPost(false)
+      }
+    }
+
+    fetchLatestPost()
+  }, [])
+
+  // Magnetic button effect
+  const handleMouseMove = (e: React.MouseEvent<HTMLAnchorElement>, ref: React.RefObject<HTMLAnchorElement | null>) => {
+    if (!ref.current) return
+    
+    const button = ref.current
+    const rect = button.getBoundingClientRect()
+    const x = e.clientX - rect.left - rect.width / 2
+    const y = e.clientY - rect.top - rect.height / 2
+    
+    const distance = Math.sqrt(x * x + y * y)
+    const maxDistance = 100
+    
+    if (distance < maxDistance) {
+      const strength = (maxDistance - distance) / maxDistance
+      const moveX = x * strength * 0.3
+      const moveY = y * strength * 0.3
+      
+      button.style.transform = `translate(${moveX}px, ${moveY}px) scale(1.05)`
+    }
+  }
+  
+  const handleMouseLeave = (ref: React.RefObject<HTMLAnchorElement | null>) => {
+    if (!ref.current) return
+    ref.current.style.transform = 'translate(0px, 0px) scale(1)'
+  }
+
+  const techStack = [
+    'Python', 'Laravel', 'Dart', 
+    'Flutter', 'MySQL', 'Flutterflow', 'N8N','Docker'
+  ]
+
   return (
-    <section id="home" className="min-h-screen flex items-center justify-center relative overflow-hidden bg-gradient-to-br from-gray-900 via-black to-gray-900">
-      {/* Animated background elements with parallax */}
-      <div className="absolute inset-0">
-        <motion.div 
-          style={{ y: parallaxY1, x: mouseX }}
-          className="absolute top-1/4 left-1/4 w-72 h-72 bg-blue-600/20 rounded-full blur-3xl"
-          animate={{
-            scale: [1, 1.2, 1],
-            opacity: [0.2, 0.4, 0.2],
-          }}
-          transition={{
-            duration: 8,
-            repeat: Infinity,
-            ease: "easeInOut"
-          }}
-        />
-        <motion.div 
-          style={{ y: parallaxY2, x: mouseY }}
-          className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-600/20 rounded-full blur-3xl"
-          animate={{
-            scale: [1.2, 1, 1.2],
-            opacity: [0.3, 0.5, 0.3],
-          }}
-          transition={{
-            duration: 10,
-            repeat: Infinity,
-            ease: "easeInOut"
-          }}
-        />
-        <motion.div 
-          style={{ y: parallaxY3 }}
-          className="absolute top-1/2 left-1/2 w-64 h-64 bg-cyan-600/20 rounded-full blur-3xl"
-          animate={{
-            scale: [1, 1.3, 1],
-            opacity: [0.2, 0.6, 0.2],
-          }}
-          transition={{
-            duration: 12,
-            repeat: Infinity,
-            ease: "easeInOut"
-          }}
-        />
+    <section id="hero" className="section relative overflow-hidden">
+      {/* Enhanced animated background elements */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-gradient-to-r from-blue-50 to-purple-50 rounded-full animate-float"></div>
+        <div className="absolute bottom-1/4 right-1/4 w-48 h-48 bg-gradient-to-r from-pink-50 to-blue-50 rounded-full animate-float-delayed"></div>
+        <div className="absolute top-3/4 left-1/2 w-32 h-32 bg-gradient-to-r from-green-50 to-blue-50 rounded-full animate-float-slow"></div>
+        <div className="absolute top-1/2 right-1/3 w-24 h-24 bg-gradient-to-r from-yellow-50 to-pink-50 rounded-full animate-float opacity-20"></div>
+        <div className="absolute bottom-1/3 left-1/6 w-20 h-20 bg-gradient-to-r from-purple-50 to-indigo-50 rounded-full animate-float-delayed opacity-15"></div>
       </div>
       
-      {/* Grid pattern overlay */}
-      <div className="absolute inset-0 opacity-30">
-        <div className="absolute inset-0" style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Ccircle cx='30' cy='30' r='1'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`
-        }}></div>
-      </div>
-
-      <motion.div 
-        className="container mx-auto px-6 py-20 relative z-10"
-        variants={staggerContainer}
-        initial="hidden"
-        animate="visible"
-      >
-        <div className="max-w-6xl mx-auto text-center">
-          {/* Floating code icons with parallax */}
-          <motion.div 
-            style={{ x: mouseX, y: mouseY }}
-            className="absolute top-20 left-10 text-blue-400"
-            animate={{
-              y: [0, -20, 0],
-              rotate: [0, 10, -10, 0],
-            }}
-            transition={{
-              duration: 6,
-              repeat: Infinity,
-              ease: "easeInOut"
-            }}
-            variants={fadeIn}
-          >
-            <Code size={32} />
-          </motion.div>
-          <motion.div 
-            style={{ x: mouseY, y: mouseX }}
-            className="absolute top-20 right-16 text-purple-400"
-            animate={{
-              y: [0, 20, 0],
-              rotate: [0, -10, 10, 0],
-            }}
-            transition={{
-              duration: 5,
-              repeat: Infinity,
-              ease: "easeInOut",
-              delay: 1
-            }}
-            variants={fadeIn}
-          >
-            <Zap size={28} />
-          </motion.div>
-          
-          <div className="mb-12">
-            {/* Profile image with glow effect */}
-            <motion.div 
-              className="relative w-40 h-40 mx-auto mb-8"
-              variants={scaleIn}
-            >
-              <div className="absolute inset-0 bg-gradient-to-r from-blue-600 via-purple-600 to-cyan-600 rounded-full animate-spin-slow blur-sm"></div>
-              <div className="relative w-full h-full bg-gradient-to-br from-blue-600 to-purple-700 rounded-full flex items-center justify-center text-white text-5xl font-bold border-4 border-white/20">
-                AB
+      <div className="container relative">
+        <div className="grid lg:grid-cols-12 gap-16 items-start">
+          {/* Main content */}
+          <div className="lg:col-span-8 space-y-12">
+            <div className="space-y-8">
+              <div className="space-y-2">
+                <div className="flex items-center gap-3 text-body text-gray-600">
+                  <span>{timeOfDay}!</span>
+                  <div className="w-1 h-1 bg-gray-400 rounded-full"></div>
+                  <span className="text-mono">{currentTime} IST</span>
+                </div>
+                
+                <h1 className="text-display">
+                  I'm{' '}
+                  <span 
+                    className="gradient-text glitch"
+                    data-text="Abhishek"
+                  >
+                    Abhishek,
+                  </span>
+                  <br />
+                  and I craft{' '}
+                  <em className="not-italic relative">
+                    digital experiences that matter
+                    <svg 
+                      className="absolute -bottom-2 left-0 w-full h-3 text-blue-200" 
+                      viewBox="0 0 100 10" 
+                      preserveAspectRatio="none"
+                    >
+                      <path 
+                        d="M0,7 Q25,2 50,7 T100,7" 
+                        stroke="currentColor" 
+                        strokeWidth="2" 
+                        fill="none"
+                        strokeLinecap="round"
+                      />
+                    </svg>
+                  </em>
+                  .
+                </h1>
               </div>
-            </motion.div>
-            
-            {/* Main heading with gradient text */}
-            <motion.h1 
-              className="text-6xl md:text-8xl font-black mb-6"
-              variants={fadeInUp}
-            >
-              <span className="gradient-text">Abhishek</span>
-              <br />
-              <span className="text-white">Badar</span>
-            </motion.h1>
-            
-            {/* Animated role text */}
-            <motion.div 
-              className="relative mb-8"
-              variants={fadeInUp}
-            >
-              <p className="text-2xl md:text-3xl text-gray-300 mb-4">
-                <span className="font-mono text-cyan-400">&lt;</span>
-                <span className="gradient-text font-semibold">Full Stack Developer</span>
-                <span className="font-mono text-cyan-400">&gt;</span>
-              </p>
-              <motion.div 
-                className="flex flex-wrap justify-center gap-3 mb-6"
-                variants={fadeInUp}
-              >
-                {['Python', 'Laravel', 'PHP', 'Flutter', 'N8N'].map((tech, index) => (
-                  <span
-                    key={tech}
-                    className="px-4 py-2 bg-white/10 backdrop-blur-sm border border-white/20 rounded-full text-sm font-medium text-gray-300 hover:bg-white/20 transition-all duration-300"
+              
+              <div className="text-body-xl text-gray-600 max-w-2xl">
+                <p>
+                  Full-stack developer who believes great software should feel{' '}
+                  <strong className="font-semibold text-black">effortless</strong>. 
+                  Currently building developer tools and browser extensions. 
+                  Always caffeinated ☕️
+                </p>
+              </div>
+              
+              <div className="flex flex-wrap gap-4">
+                <a
+                  ref={primaryBtnRef}
+                  href="#projects"
+                  className="btn btn-primary magnetic group"
+                  onMouseMove={(e) => handleMouseMove(e, primaryBtnRef)}
+                  onMouseLeave={() => handleMouseLeave(primaryBtnRef)}
+                  onClick={(e) => {
+                    e.preventDefault()
+                    scrollToElement('work')
+                  }}
+                >
+                  View My Work
+                  <ArrowUpRight className="w-5 h-5 ml-2 transition-transform group-hover:translate-x-1 group-hover:-translate-y-1" />
+                </a>
+                
+                <a
+                  ref={secondaryBtnRef}
+                  href="mailto:contact@abhishekbadar.dev"
+                  className="btn btn-secondary group"
+                  onMouseMove={(e) => handleMouseMove(e, secondaryBtnRef)}
+                  onMouseLeave={() => handleMouseLeave(secondaryBtnRef)}
+                >
+                  <Mail className="w-5 h-5 mr-2" />
+                  Say Hello
+                  <ArrowUpRight className="w-4 h-4 ml-2 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+                </a>
+              </div>
+            </div>
+          </div>
+          
+          {/* Sidebar with personality */}
+          <div className="lg:col-span-4 space-y-8">
+            {/* Tech stack */}
+            <div className="space-y-6">
+              <h3 className="text-title">Current Tech Stack</h3>
+              
+              <div className="flex flex-wrap gap-2">
+                {techStack.map((tech, index) => (
+                  <span 
+                    key={index} 
+                    className="badge badge-mono hover:scale-105 transition-transform cursor-default"
                     style={{ animationDelay: `${index * 100}ms` }}
                   >
                     {tech}
                   </span>
                 ))}
-              </motion.div>
-            </motion.div>
+              </div>
+            </div>
             
-            <motion.p 
-              className="text-xl text-gray-400 mb-12 max-w-3xl mx-auto leading-relaxed"
-              variants={fadeInUp}
-            >
+            {/* Fun fact */}
+            <div className="card bg-gradient-to-r from-purple-50 to-pink-50 border-purple-200">
+              <div className="space-y-2">
+                <div className="text-label font-semibold text-purple-900 uppercase tracking-wider">
+                  Built Lately -
+                </div>
+                <p className="text-body text-purple-800">
+                  Fine-tuned <strong>Qwen3-4B</strong> to generate detailed ASCII art cats using LoRA + Apple MLX—trained fully on my MacBook M4
+                </p>
+              </div>
+            </div>
+            
+            {/* Quick links */}
+            <div className="space-y-4">
+              <h3 className="text-title">Find Me Online</h3>
               
-              Engineering efficient, scalable, and automated applications.<br />
-              I turn <span className="text-blue-400 font-semibold">code</span> into 
-              <span className="text-purple-400 font-semibold"> impact</span>.
-              <br />
-              <span className="text-sm text-gray-500 mt-2 block">
-                Sharing insights and stories through{' '}
-                <a 
-                  href="https://medium.com/@NomadNotes" 
-                  target="_blank" 
-                  rel="noopener noreferrer" 
-                  className="text-green-400 hover:text-green-300 transition-colors duration-300 font-medium"
-                >  NomadNotes</a> blog
-              </span>
-            </motion.p>
+              <div className="flex gap-3">
+                <a
+                  href="https://github.com/abhishekbadar"
+                  className="w-10 h-10 bg-gray-100 hover:bg-gray-200 rounded-lg flex items-center justify-center transition-colors group"
+                  aria-label="GitHub"
+                >
+                  <Github className="w-5 h-5 text-gray-600 group-hover:text-black transition-colors" />
+                </a>
+                
+                <a
+                  href="mailto:contact@abhishekbadar.dev"
+                  className="w-10 h-10 bg-blue-100 hover:bg-blue-200 rounded-lg flex items-center justify-center transition-colors group"
+                  aria-label="Email"
+                >
+                  <Mail className="w-5 h-5 text-blue-600 group-hover:text-blue-700 transition-colors" />
+                </a>
+              </div>
+            </div>
+            
+            {/* Blog highlight */}
+            <div className="card bg-gradient-to-r from-indigo-50 to-blue-50 border-indigo-200">
+              <div className="space-y-3">
+                <div className="text-label font-semibold text-indigo-900 uppercase tracking-wider">
+                  Latest Writing
+                </div>
+                {isLoadingPost ? (
+                  <div className="h-4 bg-indigo-200 rounded animate-pulse"></div>
+                ) : latestPost ? (
+                  <h3 className="font-medium text-indigo-900">{latestPost.title}</h3>
+                ) : (
+                  <p className="text-body text-indigo-800">
+                    Sharing insights on web development, developer tools, and building products that scale.
+                  </p>
+                )}
+                <a
+                  href={latestPost?.link || "https://medium.com/@abhishekbadar"}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 text-indigo-700 hover:text-indigo-900 font-medium transition-colors"
+                >
+                  {latestPost ? "Read full post" : "Read my blog"}
+                  <ArrowUpRight className="w-4 h-4" />
+                </a>
+              </div>
+            </div>
           </div>
-
-          {/* CTA Buttons with enhanced styling */}
-          <motion.div 
-            className="flex flex-wrap justify-center gap-6 mb-12"
-            variants={fadeInUp}
-          >
-            <a
-              href="mailto:ab15.badar@gmail.com"
-              className="group relative px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-full font-semibold text-lg hover:shadow-2xl hover:shadow-blue-500/25 transition-all duration-300 transform hover:scale-105"
-            >
-              <div className="flex items-center gap-3">
-                <Mail size={20} />
-                Let's Connect
-              </div>
-              <div className="absolute inset-0 bg-gradient-to-r from-blue-400 to-purple-400 rounded-full opacity-0 group-hover:opacity-20 transition-opacity duration-300"></div>
-            </a>
-            
-            <a
-              href="https://github.com/AbhishekBadar"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="group px-8 py-4 bg-white/10 backdrop-blur-sm border border-white/20 text-white rounded-full font-semibold text-lg hover:bg-white/20 transition-all duration-300 transform hover:scale-105"
-            >
-              <div className="flex items-center gap-3">
-                <Github size={20} />
-                View Work
-              </div>
-            </a>
-            
-            <a
-              href="https://linkedin.com/in/abhishekbadar"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="group px-8 py-4 bg-white/10 backdrop-blur-sm border border-white/20 text-white rounded-full font-semibold text-lg hover:bg-white/20 transition-all duration-300 transform hover:scale-105"
-            >
-              <div className="flex items-center gap-3">
-                <Linkedin size={20} />
-                LinkedIn
-              </div>
-            </a>
-            
-            <a
-              href="https://medium.com/@NomadNotes"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="group px-8 py-4 bg-gradient-to-r from-green-600 to-emerald-500 text-white rounded-full font-semibold text-lg hover:shadow-2xl hover:shadow-green-500/25 transition-all duration-300 transform hover:scale-105"
-            >
-              <div className="flex items-center gap-3">
-                <PenTool size={20} />
-                Read Blog
-              </div>
-            </a>
-          </motion.div>
-
-          {/* Contact info with modern styling */}
-          <motion.div 
-            className="flex flex-wrap justify-center gap-8 text-gray-400 mb-16"
-            variants={fadeInUp}
-          >
-            <div className="flex items-center gap-3 group hover:text-white transition-colors duration-300">
-              <Mail size={18} className="text-blue-400" />
-              <span className="font-medium">ab15.badar@gmail.com</span>
-            </div>
-            <div className="flex items-center gap-3 group hover:text-white transition-colors duration-300">
-              <Phone size={18} className="text-green-400" />
-              <span className="font-medium">+91 9096684842</span>
-            </div>
-          </motion.div>
-          
-          {/* Scroll indicator */}
-          <motion.div 
-            className="absolute bottom-8 left-1/2 transform -translate-x-1/2 animate-bounce"
-            variants={fadeIn}
-          >
-            <ArrowDown size={24} className="text-gray-400" />
-          </motion.div>
         </div>
-      </motion.div>
+      </div>
     </section>
   )
 }
